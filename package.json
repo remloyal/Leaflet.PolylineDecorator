@@ -3,6 +3,7 @@
   "version": "1.6.0",
   "repository": "bbecquet/Leaflet.PolylineDecorator",
   "main": "./dist/leaflet.polylineDecorator.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
     "build:watch": "rollup -c -w",

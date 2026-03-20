@@ -28,6 +28,36 @@ bower install leaflet-polylinedecorator
 * Multiple patterns can be applied to the same line
 * New behaviors can be obtained by defining new symbols
 
+## Additional features in this branch
+
+### 1) Viewport clipping optimization (large path performance)
+
+This branch adds viewport-based symbol generation to avoid heavy computation on off-screen paths:
+
+- `viewportOnly`: generate symbols only for the visible area (default: `true`)
+- `viewportPadding`: extra viewport padding ratio to reduce edge flicker while panning (default: `0.1`)
+- Pattern projection uses visible distance ranges computed via segment clipping, reducing unnecessary offset work
+
+### 2) Calculation pipeline optimizations
+
+- Coarse filtering by path `bounds` first, so off-screen paths are skipped early
+- Projection cache keyed by zoom level (projected points + segments), reducing repeated `project()` and segmentation cost
+
+### 3) Performance diagnostics
+
+Added debug options:
+
+- `debugPerformance`: enable performance logs
+- `debugEveryNRedraws`: log every N `redraw` calls
+- `debugTopPaths`: print the top N slowest paths
+
+Logs include `totalMs`, `drawMs`, `directionMs`, `symbolMs`, `addLayerMs`, cache hit/miss data, and more.
+
+### 4) Synced fork fixes
+
+- `Pattern.lineOffset` is now fully applied (pixel offset to left/right of path)
+- `L.Symbol.arrowHead({ angleCorrection })` is now supported (arrow heading correction)
+
 ## Screenshot
 
 ![screenshot](https://raw.github.com/bbecquet/Leaflet.PolylineDecorator/master/screenshot.png "Screenshot showing different applications of the library")
@@ -45,6 +75,16 @@ To create a decorator and add it to the map: `L.polylineDecorator(latlngs, optio
 
 * `options` has a single property `patterns`, which is an array of `Pattern` objects.
 
+This branch also supports the following decorator-level options:
+
+Property | Type | Required | Description
+--- | --- | --- | ---
+`viewportOnly` | boolean | No | Compute/generate symbols only in the visible area. Default: `true`.
+`viewportPadding` | number | No | Viewport padding ratio (e.g. `0.1`). Default: `0.1`.
+`debugPerformance` | boolean | No | Enable performance logs. Default: `false`.
+`debugEveryNRedraws` | number | No | Log once every N redraws. Default: `1`.
+`debugTopPaths` | number | No | Number of slowest paths kept in logs. Default: `3`.
+
 ### `Pattern` definition
 
 Property | Type | Required | Description
@@ -52,9 +92,12 @@ Property | Type | Required | Description
 `offset`| *see below* | No | Offset of the first pattern symbol, from the start point of the line. Default: 0.
 `endOffset`| *see below* | No | Minimum offset of the last pattern symbol, from the end point of the line. Default: 0.
 `repeat`| *see below* | Yes | Repetition interval of the pattern symbols. Defines the distance between each consecutive symbol's anchor point.
+`lineOffset` | number (pixels) | No | Offset line to the left (negative value) or the right (positive value). Default: 0.
 `symbol`| Symbol factory | Yes | Instance of a symbol factory class.
 
 `offset`, `endOffset` and `repeat` can be each defined as a number, in pixels, or in percentage of the line's length, as a string (ex: `'10%'`).
+
+> Note: `L.Symbol.arrowHead()` also supports `angleCorrection` (in degrees) to adjust arrow orientation.
 
 ### Methods
 
