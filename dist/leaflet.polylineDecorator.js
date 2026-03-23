@@ -1,3 +1,9 @@
+/*!
+ * leaflet-polylinedecorator v1.8.0
+ * https://github.com/remloyal/Leaflet.PolylineDecorator
+ * (c) 2026 
+ * Released under the MIT License.
+ */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
 	typeof define === 'function' && define.amd ? define(['leaflet'], factory) :
