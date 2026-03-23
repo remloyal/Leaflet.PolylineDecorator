@@ -42,6 +42,17 @@ This branch adds viewport-based symbol generation to avoid heavy computation on 
 
 - Coarse filtering by path `bounds` first, so off-screen paths are skipped early
 - Projection cache keyed by zoom level (projected points + segments), reducing repeated `project()` and segmentation cost
+- Incremental symbol update: only changed paths are rebuilt, unchanged path symbol layers are reused
+- Optional reuse for fully-visible paths at the same zoom level to skip unnecessary recomputation
+
+### 2.1) Async chunked drawing (UI responsiveness)
+
+For large datasets, this branch supports optional async chunked redraw:
+
+- `asyncDraw`: split redraw across animation frames (default: `false`)
+- `asyncChunkSize`: max number of paths processed per frame (default: `60`)
+
+This reduces long main-thread tasks while panning/zooming, at the cost of longer wall-clock completion time.
 
 ### 3) Performance diagnostics
 
@@ -52,6 +63,13 @@ Added debug options:
 - `debugTopPaths`: print the top N slowest paths
 
 Logs include `totalMs`, `drawMs`, `directionMs`, `symbolMs`, `addLayerMs`, cache hit/miss data, and more.
+
+Additional async-aware fields:
+
+- `mode`: `sync` or `async`
+- `activeMs`: active CPU time spent processing draw work
+- `idleMs`: frame waiting time (`totalMs - activeMs`) in async mode
+- `asyncFrames`: number of animation frames used to finish one redraw
 
 ### 4) Synced fork fixes
 
@@ -84,6 +102,19 @@ Property | Type | Required | Description
 `debugPerformance` | boolean | No | Enable performance logs. Default: `false`.
 `debugEveryNRedraws` | number | No | Log once every N redraws. Default: `1`.
 `debugTopPaths` | number | No | Number of slowest paths kept in logs. Default: `3`.
+`reuseFullyVisibleAtSameZoom` | boolean | No | Reuse symbol layers when a path remains fully visible and zoom is unchanged. Default: `true`.
+`asyncDraw` | boolean | No | Enable async chunked redraw across animation frames. Default: `false`.
+`asyncChunkSize` | number | No | Max paths processed per frame when `asyncDraw` is enabled. Default: `60`.
+
+> Note on visibility behavior:
+>
+> - `viewportPadding` is used for coarse path filtering and visible-range estimation.
+> - Final symbol rendering is still clipped to the strict current map bounds.
+
+> Note on metrics:
+>
+> - In `asyncDraw` mode, `totalMs` includes frame waiting time.
+> - Use `activeMs` to compare actual drawing compute cost.
 
 ### `Pattern` definition
 
