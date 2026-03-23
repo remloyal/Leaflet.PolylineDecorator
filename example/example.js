@@ -194,6 +194,16 @@
   }).addTo(map);
 
   // --- Big data testing example ---
+  // 自定义一个专用的 canvas pane，可控制层级
+  map.createPane("decoratorCanvasPane");
+  map.getPane("decoratorCanvasPane").style.zIndex = 450; // 高于 overlayPane(400)，低于 markerPane(600)
+  map.getPane("decoratorCanvasPane").style.pointerEvents = "none";
+
+  const polylineDecoratorRenderer = L.canvas({
+    padding: 0.5,
+    pane: "decoratorCanvasPane",
+  });
+
   var bigDataCoords = [];
   var linesData = [];
   for (var i = 0; i < 500; i++) {
@@ -210,10 +220,10 @@
           color: "#5b2ec4",
           fillOpacity: 0.5,
           opacity: 0.5,
+          renderer: polylineDecoratorRenderer,
         }).addTo(map),
       );
     }
-  const polylineDecoratorRenderer = L.canvas({ padding: 0.5 });
   const gtStyleArrow = L.Symbol.arrowHead({
     headAngle: 45,
     pixelSize: 6,
@@ -228,7 +238,7 @@
   L.polylineDecorator(linesData, {
     viewportOnly: true,
     viewportPadding: 0.1,
-    asyncDraw: false,
+    asyncDraw: true,
     asyncChunkSize: 60,
     debugPerformance: true,
     debugEveryNRedraws: 1,

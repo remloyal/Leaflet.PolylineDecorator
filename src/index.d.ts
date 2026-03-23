@@ -96,6 +96,26 @@ declare module "leaflet" {
      * 调试：打印最慢的前 N 条可视路径。
      */
     debugTopPaths?: number | undefined;
+    /**
+     * 性能优化：当路径在当前视口完整可见且 zoom 不变时，复用上一帧符号图层。
+     * 默认 true。
+     */
+    reuseFullyVisibleAtSameZoom?: boolean | undefined;
+    /**
+     * 性能优化：是否启用分帧异步重绘。
+     * 默认 false。
+     */
+    asyncDraw?: boolean | undefined;
+    /**
+     * 性能优化：首次加入地图时是否强制使用异步分帧重绘。
+     * 默认 true。
+     */
+    asyncInitialDraw?: boolean | undefined;
+    /**
+     * 性能优化：异步分帧时每帧最多处理的 path 数。
+     * 默认 60。
+     */
+    asyncChunkSize?: number | undefined;
   }
 
   class PolylineDecorator extends FeatureGroup {

@@ -454,6 +454,8 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
     reuseFullyVisibleAtSameZoom: true,
     // 性能优化：是否分帧异步绘制（降低主线程长任务）
     asyncDraw: false,
+    // 性能优化：首次加入地图时是否强制异步分帧绘制
+    asyncInitialDraw: true,
     // 每帧最多处理的 path 数（越小越流畅，越大越快完成）
     asyncChunkSize: 60
   },
@@ -479,6 +481,8 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
     this._drawTaskId = 0;
     // 异步绘制的 requestAnimFrame 句柄
     this._drawFrame = null;
+    // 是否已完成过至少一次绘制（用于首绘策略）
+    this._hasDrawnOnce = false;
   },
 
   // 取消当前异步分帧绘制（在新 redraw 或移除图层时调用）
@@ -538,6 +542,7 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
    * Changes the patterns used by this decorator
    * and redraws the new one.
    */
+  // 更新路径数据并刷新相关缓存后重绘
   setPaths: function setPaths(paths) {
     this._paths = this._initPaths(paths);
     this._pathBounds = this._initPathBounds();
@@ -694,8 +699,9 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
   onAdd: function onAdd(map) {
     this._map = map;
     this._ensurePatternGroups();
-    this._draw();
     this._map.on("moveend", this.redraw, this);
+    // 首次绘制走 redraw 流程，便于复用 asyncInitialDraw/asyncDraw 策略
+    this.redraw();
   },
 
   // 图层移除时：取消异步任务并解绑事件
@@ -817,10 +823,12 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
     var t0 = this._now();
     var t1 = t0;
 
+    var useAsync = this.options.asyncDraw || !this._hasDrawnOnce && this.options.asyncInitialDraw;
+
     var perf = {
       redraw: this._redrawSeq,
       // 当前 redraw 的绘制模式
-      mode: this.options.asyncDraw ? "async" : "sync",
+      mode: useAsync ? "async" : "sync",
       pathsTotal: 0,
       pathsVisible: 0,
       pathsSkippedByBounds: 0,
@@ -841,7 +849,7 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
       totalMs: 0
     };
 
-    if (this.options.asyncDraw) {
+    if (useAsync) {
       this._drawAsync(perf, t0);
       return;
     }
@@ -855,6 +863,7 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
     perf.asyncFrames = 1;
     perf.totalMs = drawEnd - t0;
     this._debugLog(perf);
+    this._hasDrawnOnce = true;
   },
 
   // 更新单条路径在某个 pattern 下的符号图层（增量复用/重建）
@@ -1074,6 +1083,7 @@ L$1.PolylineDecorator = L$1.FeatureGroup.extend({
       localPerf.drawMs = drawEnd - drawStart;
       localPerf.totalMs = drawEnd - t0;
       _this6._debugLog(localPerf);
+      _this6._hasDrawnOnce = true;
     };
 
     this._drawFrame = L$1.Util.requestAnimFrame(step, this);
